@@ -38,6 +38,7 @@ __all__ = [
     "Meters",
     "Node",
     "NodeIdAllocator",
+    "ParGroup",
     "Recorder",
     "RootNode",
     "Server",
