@@ -988,30 +988,6 @@ class Server(BaseServer):
             raise ServerOffline
         return self.default_group.add_group(add_action=add_action)
 
-    def add_parallel_group(self, add_action: AddActionLike = None) -> "ParGroup":
-        """
-        Add a group relative to the default group via ``add_action``.
-
-        ::
-
-            >>> server = supriya.Server().boot()
-            >>> print(server.query())
-            NODE TREE 0 group
-                1 group
-
-        ::
-
-            >>> group = server.add_group()
-            >>> print(server.query())
-            NODE TREE 0 group
-                1 group
-                    1000 group
-
-        """
-        if self.default_group is None:
-            raise ServerOffline
-        return self.default_group.add_parallel_group(add_action=add_action)
-
     def add_synth(
         self, synthdef=None, add_action: Optional[AddActionLike] = None, **kwargs
     ) -> Synth:

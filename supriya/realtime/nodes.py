@@ -319,37 +319,6 @@ class Node(UniqueTreeNode):
         group.allocate(add_action=add_action, target_node=self)
         return group
 
-    def add_parallel_group(self, add_action: AddActionLike = None) -> "ParGroup":
-        """
-        Add a group relative to this node via ``add_action``.
-
-        ::
-
-            >>> server = supriya.Server().boot()
-            >>> print(server.query())
-            NODE TREE 0 group
-                1 group
-
-        ::
-
-            >>> node = server.add_group()
-            >>> group = node.add_group()
-            >>> print(server.query())
-            NODE TREE 0 group
-                1 group
-                    1000 group
-                        1001 group
-
-        """
-        if add_action is None:
-            add_action = self._valid_add_actions[0]
-        add_action = AddAction.from_expr(add_action)
-        if add_action not in self._valid_add_actions:
-            raise ValueError("Invalid add action: {add_action}")
-        group = ParGroup()
-        group.allocate(add_action=add_action, target_node=self)
-        return group
-
     def add_synth(
         self,
         synthdef: Optional[SynthDef] = None,
@@ -705,17 +674,6 @@ class Group(Node, UniqueTreeList):
                         ]
                     )
                     requests.append(request)
-                elif isinstance(node, ParGroup):
-                    request = supriya.commands.ParallelGroupNewRequest(
-                        items=[
-                            supriya.commands.ParallelGroupNewRequest.Item(
-                                add_action=add_action,
-                                node_id=node,
-                                target_node_id=target_node,
-                            )
-                        ]
-                    )
-                    requests.append(request)
                 else:
                     if node.synthdef not in server:
                         synthdefs.add(node.synthdef)
@@ -835,60 +793,6 @@ class Group(Node, UniqueTreeList):
     @property
     def controls(self) -> GroupInterface:
         return self._control_interface
-
-class ParGroup(Group):
-
-    def __str__(self):
-        result = []
-        node_id = self.node_id
-        if node_id is None:
-            node_id = "???"
-        if self.name:
-            string = f"{node_id} parallel group ({self.name})"
-        else:
-            string = f"{node_id} parallel group"
-        result.append(string)
-        for child in self:
-            lines = str(child).splitlines()
-            for line in lines:
-                result.append(f"    {line}")
-        return "\n".join(result)
-
-    def allocate(
-            self,
-            target_node,
-            add_action: AddActionLike = None,
-            node_id_is_permanent: bool = False,
-            sync: bool = False,
-    ) -> "Node":
-        # TODO: Consolidate this with Group.allocate()
-        import supriya.commands
-
-        if self.is_allocated:
-            return self
-        self._node_id_is_permanent = bool(node_id_is_permanent)
-        target_node = Node._expr_as_target(target_node)
-        server = target_node.server
-        group_new_request = supriya.commands.ParallelGroupNewRequest(
-            items=[
-                supriya.commands.ParallelGroupNewRequest.Item(
-                    add_action=AddAction.from_expr(add_action),
-                    node_id=self,
-                    target_node_id=target_node.node_id,
-                )
-            ]
-        )
-        (
-            nodes,
-            paused_nodes,
-            requests,
-            synthdefs,
-        ) = self._collect_requests_and_synthdefs(self, server)
-        requests = [group_new_request, *requests]
-        if self.is_paused:
-            paused_nodes.add(self)
-        return self._allocate(paused_nodes, requests, server, synthdefs)
-
 
 
 class Synth(Node):
