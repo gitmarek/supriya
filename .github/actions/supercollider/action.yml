@@ -70,6 +70,7 @@ runs:
             portaudio \
             qt5 \
             readline
+          ldconfig
         else
           echo "$RUNNER_OS not supported"
           exit 1
