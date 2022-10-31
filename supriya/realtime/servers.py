@@ -27,7 +27,7 @@ from supriya.osc.protocols import (
     ThreadedOscProtocol,
 )
 from supriya.querytree import QueryTreeGroup, QueryTreeSynth
-from supriya.scsynth import Options, find
+from supriya.scsynth import Options
 
 from ..commands import StatusResponse
 from ..typing import AddActionLike, CalculationRateLike
