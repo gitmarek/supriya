@@ -206,7 +206,7 @@ def test_boot_a_and_connect_b_too_many_clients():
     assert not server_b.is_running and not server_b.is_owner
 
 
-@pytest.mark.parametrize("executable", [None, "supernova"])
+@pytest.mark.parametrize("executable", [None])
 def test_boot_a_and_connect_b_and_quit_a(executable):
     server_a, server_b = Server(), Server()
     assert not server_a.is_running and not server_a.is_owner
@@ -268,7 +268,7 @@ def test_boot_a_and_connect_b_and_quit_b(executable):
     assert server_b.is_running and not server_b.is_owner
 
 
-@pytest.mark.parametrize("executable", [None, "supernova"])
+@pytest.mark.parametrize("executable", [None])
 def test_boot_a_and_connect_b_and_force_quit_b(executable):
     server_a, server_b = Server(), Server()
     assert not server_a.is_running and not server_a.is_owner
