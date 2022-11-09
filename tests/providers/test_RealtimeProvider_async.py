@@ -7,6 +7,7 @@ import pytest_asyncio
 
 import supriya
 from supriya.osc import OscBundle, OscMessage
+from supriya.osc.utils import find_free_port
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
@@ -23,7 +24,7 @@ pytestmark = pytest.mark.asyncio
 @pytest_asyncio.fixture()
 async def async_server(event_loop):
     server = supriya.AsyncServer()
-    await server.boot(port=supriya.osc.utils.find_free_port())
+    await server.boot(port=find_free_port())
     provider = supriya.Provider.from_context(server)
     async with provider.at():
         synth_p = provider.add_synth()
@@ -32,8 +33,11 @@ async def async_server(event_loop):
     await server.quit()
 
 
-# Make sure messages are sent in the right order
 async def test_RealtimeProvider_async_set_node_01(async_server):
+    """
+    Make sure messages are sent in the right order.
+    """
+
     provider = supriya.Provider.from_context(async_server)
     assert provider is not None
     cur_time = time.time()
@@ -81,8 +85,11 @@ async def test_RealtimeProvider_async_set_node_01(async_server):
     ]
 
 
-# Make sure no message is lost under heavy load
 async def test_RealtimeProvider_async_set_node_02(async_server):
+    """
+    Make sure no message is lost under heavy load.
+    """
+
     provider = supriya.Provider.from_context(async_server)
     assert provider is not None
 
@@ -109,8 +116,11 @@ async def test_RealtimeProvider_async_set_node_02(async_server):
     assert len(send_msgs) == 128 * 128
 
 
-# Make sure no message is lost under heavy load, quantised time
 async def test_RealtimeProvider_async_set_node_03(async_server):
+    """
+    Make sure no message is lost under heavy load, quantised time.
+    """
+
     provider = supriya.Provider.from_context(async_server)
     assert provider is not None
 
@@ -138,3 +148,77 @@ async def test_RealtimeProvider_async_set_node_03(async_server):
     ]
     assert len(send_msgs) == 123 * 78
     assert len(set([_.timestamp for _ in send_msgs])) < 123 * 78
+
+
+async def test_RealtimeProvider_async_seconds_counter_01(async_server):
+    """
+    Make sure no message is sent until moment's stack is empty
+    """
+    provider = supriya.Provider.from_context(async_server)
+
+    with async_server.osc_protocol.capture() as transcript_outer:
+        async with provider.at(88888):
+            assert provider._counter[88888] == 1
+            with async_server.osc_protocol.capture() as transcript_inner:
+                async with provider.at(88888):
+                    assert provider._counter[88888] == 2
+                    group_p = provider.add_group()
+            assert provider._counter[88888] == 1
+            group_p.free()
+        assert provider._counter[88888] == 0
+
+    assert [(_.label, _.message) for _ in transcript_inner if _.label == "S"] == []
+    assert [(_.label, _.message) for _ in transcript_outer if _.label == "S"] == [
+        (
+            "S",
+            OscBundle(
+                contents=(
+                    OscMessage("/g_new", 1001, 0, 1),
+                    OscMessage("/n_free", 1001),
+                ),
+                timestamp=88888 + provider.latency,
+            ),
+        )
+    ]
+
+
+async def test_RealtimeProvider_async_seconds_counter_02(async_server):
+    provider = supriya.Provider.from_context(async_server)
+
+    async def nested_context(n: int, provider):
+        if n > 0:
+            async with provider.at(88888):
+                group_p, transcript_inner = await nested_context(n - 1, provider)
+                await asyncio.sleep(random.random() * 0.01)
+        else:
+            with async_server.osc_protocol.capture() as transcript_inner:
+                async with provider.at(88888):
+                    group_p = provider.add_group()
+        return group_p, transcript_inner
+
+    with async_server.osc_protocol.capture() as transcript_outer:
+        async with provider.at(88888):
+            group_p, transcript_inner = await nested_context(256, provider)
+            group_p.free()
+
+    assert [
+        (_.label, _.message)
+        for _ in transcript_inner
+        if _.label == "S" and isinstance(_.message, OscBundle)
+    ] == []
+    assert [
+        (_.label, _.message)
+        for _ in transcript_outer
+        if _.label == "S" and isinstance(_.message, OscBundle)
+    ] == [
+        (
+            "S",
+            OscBundle(
+                contents=(
+                    OscMessage("/g_new", 1001, 0, 1),
+                    OscMessage("/n_free", 1001),
+                ),
+                timestamp=88888 + provider.latency,
+            ),
+        )
+    ]
