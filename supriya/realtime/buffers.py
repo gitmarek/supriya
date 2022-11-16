@@ -169,13 +169,13 @@ class Buffer(ServerObject):
 
         with tempfile.TemporaryDirectory() as temp_directory:
             file_path = pathlib.Path(temp_directory) / "tmp.wav"
-            self.write(file_path=file_path, header_format="wav", sample_format="int32")
+            self.write(file_path=file_path, header_format="wav", sample_format="float")
             return librosa.load(file_path, mono=False, sr=None)
 
     def __render__(self, **kwargs) -> PlayMemo:
         with tempfile.TemporaryDirectory() as temp_directory:
             file_path = pathlib.Path(temp_directory) / "tmp.wav"
-            self.write(file_path=file_path, header_format="wav", sample_format="int32")
+            self.write(file_path=file_path, header_format="wav", sample_format="float")
             return PlayMemo.from_path(file_path)
 
     def __repr__(self):
