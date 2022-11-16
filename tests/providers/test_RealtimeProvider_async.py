@@ -173,8 +173,8 @@ async def test_RealtimeProvider_async_seconds_counter_01(async_server):
             "S",
             OscBundle(
                 contents=(
-                    OscMessage("/g_new", 1001, 0, 1),
-                    OscMessage("/n_free", 1001),
+                    OscMessage("/g_new", group_p.identifier, 0, 1),
+                    OscMessage("/n_free", group_p.identifier),
                 ),
                 timestamp=88888 + provider.latency,
             ),
@@ -215,8 +215,8 @@ async def test_RealtimeProvider_async_seconds_counter_02(async_server):
             "S",
             OscBundle(
                 contents=(
-                    OscMessage("/g_new", 1001, 0, 1),
-                    OscMessage("/n_free", 1001),
+                    OscMessage("/g_new", group_p.identifier, 0, 1),
+                    OscMessage("/n_free", group_p.identifier),
                 ),
                 timestamp=88888 + provider.latency,
             ),
