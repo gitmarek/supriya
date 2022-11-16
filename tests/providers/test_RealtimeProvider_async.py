@@ -13,16 +13,15 @@ from supriya.osc.utils import find_free_port
 pytestmark = pytest.mark.asyncio
 
 
-# @pytest.fixture(scope="module")
-# def event_loop():
-#     loop = asyncio.get_event_loop_policy().new_event_loop()
-#     yield loop
-#     loop.close()
+@pytest.fixture(scope="module")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
-# TODO: make this fixture persistent
-@pytest_asyncio.fixture()
-async def async_server(event_loop):
+@pytest_asyncio.fixture(scope="module")
+async def persistent_async_server(event_loop):
     server = supriya.AsyncServer()
     await server.boot(port=find_free_port())
     provider = supriya.Provider.from_context(server)
@@ -31,6 +30,23 @@ async def async_server(event_loop):
         synth_p.free()
     yield server
     await server.quit()
+
+
+@pytest.fixture(autouse=True)
+def shutdown_async_servers(shutdown_scsynth, event_loop):
+    pass
+
+
+@pytest_asyncio.fixture
+async def async_server(persistent_async_server):
+    serv = persistent_async_server
+    # serv.send(["/d_freeAll"])
+    serv.send(["/g_freeAll", 0])
+    # serv.send(["/clearSched"])
+    # await asyncio.sleep(0.01)
+    await serv._setup_default_groups()
+    await serv._setup_system_synthdefs()
+    yield serv
 
 
 async def test_RealtimeProvider_async_set_node_01(async_server):
@@ -83,6 +99,7 @@ async def test_RealtimeProvider_async_set_node_01(async_server):
             ),
         ),
     ]
+    await asyncio.sleep(1)
 
 
 async def test_RealtimeProvider_async_set_node_02(async_server):
@@ -114,6 +131,7 @@ async def test_RealtimeProvider_async_set_node_02(async_server):
         if _.label == "S" and isinstance(_.message, OscBundle)
     ]
     assert len(send_msgs) == 128 * 128
+    await asyncio.sleep(1)
 
 
 async def test_RealtimeProvider_async_set_node_03(async_server):
@@ -148,6 +166,7 @@ async def test_RealtimeProvider_async_set_node_03(async_server):
     ]
     assert len(send_msgs) == 123 * 78
     assert len(set([_.timestamp for _ in send_msgs])) < 123 * 78
+    await asyncio.sleep(1)
 
 
 async def test_RealtimeProvider_async_seconds_counter_01(async_server):
@@ -166,7 +185,6 @@ async def test_RealtimeProvider_async_seconds_counter_01(async_server):
             assert provider._counter[88888] == 1
             group_p.free()
         assert provider._counter[88888] == 0
-
     assert [(_.label, _.message) for _ in transcript_inner if _.label == "S"] == []
     assert [(_.label, _.message) for _ in transcript_outer if _.label == "S"] == [
         (
