@@ -1,7 +1,9 @@
+import asyncio
 import pathlib
 import platform
 
 import pytest
+import pytest_asyncio
 
 import supriya
 
@@ -28,6 +30,25 @@ def persistent_server():
     server.boot()
     yield server
     server.quit()
+
+
+@pytest.fixture(scope="module")
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def persistent_async_server(event_loop):
+    server = supriya.AsyncServer()
+    await server.boot(port=supriya.osc.utils.find_free_port())
+    provider = supriya.Provider.from_context(server)
+    async with provider.at():
+        synth_p = provider.add_synth()
+        synth_p.free()
+    yield server
+    await server.quit()
 
 
 # ### HELPERS ### #

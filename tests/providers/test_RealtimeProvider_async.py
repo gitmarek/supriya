@@ -7,29 +7,9 @@ import pytest_asyncio
 
 import supriya
 from supriya.osc import OscBundle, OscMessage
-from supriya.osc.utils import find_free_port
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio
-
-
-@pytest.fixture(scope="module")
-def event_loop():
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest_asyncio.fixture(scope="module")
-async def persistent_async_server(event_loop):
-    server = supriya.AsyncServer()
-    await server.boot(port=find_free_port())
-    provider = supriya.Provider.from_context(server)
-    async with provider.at():
-        synth_p = provider.add_synth()
-        synth_p.free()
-    yield server
-    await server.quit()
 
 
 @pytest.fixture(autouse=True)
@@ -40,12 +20,9 @@ def shutdown_async_servers(shutdown_scsynth, event_loop):
 @pytest_asyncio.fixture
 async def async_server(persistent_async_server):
     serv = persistent_async_server
-    # serv.send(["/d_freeAll"])
+    # TODO: AsyncServ.reset()
     serv.send(["/g_freeAll", 0])
-    # serv.send(["/clearSched"])
-    # await asyncio.sleep(0.01)
     await serv._setup_default_groups()
-    await serv._setup_system_synthdefs()
     yield serv
 
 
