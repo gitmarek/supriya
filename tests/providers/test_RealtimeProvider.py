@@ -1,8 +1,8 @@
 import time
 
 import hypothesis as hp
+import hypothesis.strategies as st
 import pytest
-from hypothesis import strategies as st
 from uqbar.strings import normalize
 
 from supriya.assets.synthdefs import default
@@ -18,13 +18,7 @@ from supriya.providers import (
     SynthProxy,
 )
 from supriya.utils import locate
-
-st_f32_fin = st.floats(width=32, allow_infinity=False, allow_nan=False)
-# max about 35 years from now, 2**31 to big for struct in supriya/osc/messages.py:365
-st_seconds = st.one_of(
-    st.just(None),
-    st.floats(min_value=0.0, max_value=2**30, allow_infinity=False, allow_nan=False),
-)
+from tests.confhp import st_f32_fin, st_seconds, suppress_hp_server_fixture_chk
 
 
 @pytest.fixture(autouse=True)
@@ -479,7 +473,7 @@ def test_RealtimeProvider_set_bus_error(server):
 
 
 @hp.given(seconds=st_seconds, set_val=st_f32_fin)
-@hp.settings(suppress_health_check=[hp.HealthCheck.function_scoped_fixture])
+@suppress_hp_server_fixture_chk
 def test_RealtimeProvider_set_node_1(server, seconds, set_val):
     provider = Provider.from_context(server)
     with provider.at():
@@ -582,7 +576,7 @@ def test_RealtimeProvider_set_node_error(server):
 
 
 @hp.given(parallel=st.booleans(), seconds=st_seconds)
-@hp.settings(suppress_health_check=[hp.HealthCheck.function_scoped_fixture])
+@suppress_hp_server_fixture_chk
 def test_RealtimeProvider_add_group_parallel(server, parallel, seconds):
     provider = Provider.from_context(server)
     with server.osc_protocol.capture() as transcript:
