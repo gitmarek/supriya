@@ -7,7 +7,6 @@ from uqbar.strings import normalize
 
 from supriya.assets.synthdefs import default
 from supriya.enums import AddAction, CalculationRate
-from supriya.osc.messages import OscBundle, OscMessage
 from supriya.providers import (
     BufferProxy,
     BusGroupProxy,
@@ -20,10 +19,11 @@ from supriya.providers import (
 )
 from supriya.utils import locate
 
-st_float_finite_32bit = st.floats(width=32, allow_infinity=False, allow_nan=False)
+st_f32_fin = st.floats(width=32, allow_infinity=False, allow_nan=False)
 # max about 35 years from now, 2**31 to big for struct in supriya/osc/messages.py:365
-st_float_seconds = st.floats(
-    min_value=0.0, max_value=2**30, allow_infinity=False, allow_nan=False
+st_seconds = st.one_of(
+    st.just(None),
+    st.floats(min_value=0.0, max_value=2**30, allow_infinity=False, allow_nan=False),
 )
 
 
@@ -478,18 +478,21 @@ def test_RealtimeProvider_set_bus_error(server):
         control_bus_proxy.set_(0.1234)
 
 
-@hp.given(seconds=st_float_seconds, set_val=st_float_finite_32bit)
+@hp.given(seconds=st_seconds, set_val=st_f32_fin)
 @hp.settings(suppress_health_check=[hp.HealthCheck.function_scoped_fixture])
 def test_RealtimeProvider_set_node_1(server, seconds, set_val):
     provider = Provider.from_context(server)
-    with provider.at(seconds):
+    with provider.at():
         group_proxy = provider.add_group()
     with server.osc_protocol.capture() as transcript:
-        with provider.at(seconds + 0.01):
+        with provider.at(seconds):
             group_proxy["foo"] = set_val
     msgs_sent = [_.message.to_list() for _ in transcript if _.label == "S"]
+    timestamp = seconds
+    if seconds is not None:
+        timestamp += provider.latency
     assert msgs_sent[0] == [
-        seconds + 0.01 + provider.latency,
+        timestamp,
         [["/n_set", group_proxy.identifier, "foo", set_val]],
     ]
 
@@ -578,11 +581,18 @@ def test_RealtimeProvider_set_node_error(server):
         synth_proxy["foo"] = 23
 
 
-def test_RealtimeProvider_add_group_parallel(server):
+@hp.given(parallel=st.booleans(), seconds=st_seconds)
+@hp.settings(suppress_health_check=[hp.HealthCheck.function_scoped_fixture])
+def test_RealtimeProvider_add_group_parallel(server, parallel, seconds):
     provider = Provider.from_context(server)
     with server.osc_protocol.capture() as transcript:
-        with provider.at(None):
-            provider.add_group(parallel=True)
-    assert [(_.label, _.message) for _ in transcript] == [
-        ("S", OscBundle(contents=(OscMessage("/p_new", 1000, 0, 1),)))
-    ]
+        with provider.at(seconds):
+            group_proxy = provider.add_group(parallel=parallel)
+    msgs_sent = [_.message.to_list() for _ in transcript if _.label == "S"]
+    osc_tag = "/g_new"
+    if parallel:
+        osc_tag = "/p_new"
+    timestamp = seconds
+    if seconds is not None:
+        timestamp += provider.latency
+    assert msgs_sent[0] == [timestamp, [[osc_tag, group_proxy.identifier, 0, 1]]]
