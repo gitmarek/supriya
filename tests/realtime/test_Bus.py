@@ -1,8 +1,13 @@
 import pytest
 
+import hypothesis as hp
+from hypothesis import strategies as st
+
 import supriya.realtime
 import supriya.synthdefs
 
+
+st_float_finite_32bit = st.floats(width=32, allow_infinity=False, allow_nan=False)
 
 @pytest.fixture(autouse=True)
 def shutdown_sync_servers(shutdown_scsynth):
@@ -145,7 +150,9 @@ def test_allocate_04(server):
     assert bus_d.server is server
 
 
-def test_set(server):
+@hp.given(set_val=st_float_finite_32bit)
+@hp.settings(suppress_health_check=[hp.HealthCheck.function_scoped_fixture])
+def test_set(server, set_val):
 
     control_bus = server.add_bus()
 
@@ -155,12 +162,7 @@ def test_set(server):
     assert result == 0.0
     assert control_bus.value == result
 
-    control_bus.set(0.5)
+    control_bus.set(set_val)
     result = control_bus.get()
-    assert result == 0.5
-    assert control_bus.value == result
-
-    control_bus.set(0.25)
-    result = control_bus.get()
-    assert result == 0.25
+    assert result == set_val
     assert control_bus.value == result
