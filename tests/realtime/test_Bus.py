@@ -1,13 +1,12 @@
-import pytest
-
 import hypothesis as hp
+import pytest
 from hypothesis import strategies as st
 
 import supriya.realtime
 import supriya.synthdefs
 
-
 st_float_finite_32bit = st.floats(width=32, allow_infinity=False, allow_nan=False)
+
 
 @pytest.fixture(autouse=True)
 def shutdown_sync_servers(shutdown_scsynth):

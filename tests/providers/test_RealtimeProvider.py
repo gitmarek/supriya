@@ -1,6 +1,8 @@
 import time
 
+import hypothesis as hp
 import pytest
+from hypothesis import strategies as st
 from uqbar.strings import normalize
 
 from supriya.assets.synthdefs import default
@@ -17,6 +19,12 @@ from supriya.providers import (
     SynthProxy,
 )
 from supriya.utils import locate
+
+st_float_finite_32bit = st.floats(width=32, allow_infinity=False, allow_nan=False)
+# max about 35 years from now, 2**31 to big for struct in supriya/osc/messages.py:365
+st_float_seconds = st.floats(
+    min_value=0.0, max_value=2**30, allow_infinity=False, allow_nan=False
+)
 
 
 @pytest.fixture(autouse=True)
@@ -470,16 +478,19 @@ def test_RealtimeProvider_set_bus_error(server):
         control_bus_proxy.set_(0.1234)
 
 
-def test_RealtimeProvider_set_node_1(server):
+@hp.given(seconds=st_float_seconds, set_val=st_float_finite_32bit)
+@hp.settings(suppress_health_check=[hp.HealthCheck.function_scoped_fixture])
+def test_RealtimeProvider_set_node_1(server, seconds, set_val):
     provider = Provider.from_context(server)
-    seconds = time.time()
     with provider.at(seconds):
         group_proxy = provider.add_group()
     with server.osc_protocol.capture() as transcript:
         with provider.at(seconds + 0.01):
-            group_proxy["foo"] = 23
-    assert [entry.message.to_list() for entry in transcript] == [
-        [seconds + 0.01 + provider.latency, [["/n_set", 1000, "foo", 23]]]
+            group_proxy["foo"] = set_val
+    msgs_sent = [_.message.to_list() for _ in transcript if _.label == "S"]
+    assert msgs_sent[0] == [
+        seconds + 0.01 + provider.latency,
+        [["/n_set", group_proxy.identifier, "foo", set_val]],
     ]
 
 
