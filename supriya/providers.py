@@ -39,6 +39,10 @@ from supriya.typing import AddActionLike, HeaderFormatLike, SampleFormatLike
 logger = logging.getLogger(__name__)
 
 
+# Only 13 years in the future.  Find the exact value for all test to pass
+MAX_SECONDS = 2**31 - 70000000
+
+
 @dataclasses.dataclass(frozen=True)
 class Proxy:
     provider: "Provider"
@@ -337,7 +341,7 @@ class SynthProxy(NodeProxy):
 @dataclasses.dataclass(frozen=True)
 class ProviderMoment:
     provider: "Provider"
-    seconds: float
+    seconds: Optional[float]
     bus_settings: List[Tuple[BusProxy, float]] = dataclasses.field(default_factory=list)
     buffer_additions: List[BufferProxy] = dataclasses.field(default_factory=list)
     buffer_removals: List[BufferProxy] = dataclasses.field(default_factory=list)
@@ -421,18 +425,20 @@ class ProviderMoment:
 
     def _enter(self):
         self.provider._moments.append(self)
-        self.provider._counter[self.seconds] += 1
+        if self.seconds:
+            self.provider._counter[self.seconds] += 1
         return self
 
     def _exit(self):
         self.exit_stack.close()
         self.provider._moments.pop()
-        self.provider._counter[self.seconds] -= 1
-        if not self.provider._counter[self.seconds]:
-            self.provider._counter.pop(self.seconds)
+        if self.seconds:
+            self.provider._counter[self.seconds] -= 1
+            if not self.provider._counter[self.seconds]:
+                self.provider._counter.pop(self.seconds)
         if not self.provider.server:
             return
-        elif self.provider._counter[self.seconds]:
+        elif self.seconds and self.provider._counter[self.seconds]:
             return
         requests = []
         synthdefs = set()
@@ -602,7 +608,10 @@ class Provider(metaclass=abc.ABCMeta):
     def set_node(self, node_proxy: NodeProxy, **settings) -> None:
         raise NotImplementedError
 
-    def at(self, seconds=None, wait=False) -> ProviderMoment:
+    def at(self, seconds: Optional[float] = None, wait=False) -> ProviderMoment:
+        if seconds:
+            if seconds < 0 or seconds > MAX_SECONDS:
+                raise ValueError
         if self._moments and self._moments[-1].seconds == seconds:
             provider_moment = self._moments[-1]
         else:
