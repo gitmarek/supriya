@@ -39,11 +39,6 @@ from supriya.typing import AddActionLike, HeaderFormatLike, SampleFormatLike
 logger = logging.getLogger(__name__)
 
 
-# Only 13 years in the future.  Find the exact value for all test to pass
-MAX_SECONDS = 2**31 - 70000000
-MIN_SECONDS = 0.0
-
-
 @dataclasses.dataclass(frozen=True)
 class Proxy:
     provider: "Provider"
@@ -610,9 +605,6 @@ class Provider(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def at(self, seconds: Optional[float] = None, wait=False) -> ProviderMoment:
-        if seconds:
-            if seconds < MIN_SECONDS or seconds > MAX_SECONDS:
-                raise ValueError
         if self._moments and self._moments[-1].seconds == seconds:
             provider_moment = self._moments[-1]
         else:
