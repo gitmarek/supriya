@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 # Only 13 years in the future.  Find the exact value for all test to pass
 MAX_SECONDS = 2**31 - 70000000
+MIN_SECONDS = 0.0
 
 
 @dataclasses.dataclass(frozen=True)

@@ -51,7 +51,10 @@ def test_Provider_at_seconds_01(session, server, seconds):
 @hp.given(
     seconds=st.one_of(
         st.floats(
-            max_value=0.0, exclude_max=True, allow_infinity=False, allow_nan=False
+            max_value=supriya.providers.MIN_SECONDS,
+            exclude_max=True,
+            allow_infinity=False,
+            allow_nan=False,
         ),
         st.floats(
             min_value=supriya.providers.MAX_SECONDS,
