@@ -577,7 +577,7 @@ def test_RealtimeProvider_add_group_parallel(server):
     ]
 
 
-@pytest.mark.parametrize("seconds", [100, 2**31])
+@pytest.mark.parametrize("seconds", [100, 2085978495.0, 2085978496.0])
 def test_provider_at_seconds_too_large(server, seconds):
     provider = Provider.from_context(server)
     with server.osc_protocol.capture() as transcript:
