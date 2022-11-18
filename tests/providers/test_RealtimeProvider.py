@@ -448,28 +448,35 @@ def test_RealtimeProvider_move_node_error(server):
         group_proxy_one.move(AddAction.ADD_TO_HEAD, group_proxy_two)
 
 
-def test_RealtimeProvider_set_bus_1(server):
+@hp.given(seconds=st_seconds)
+@suppress_hp_server_fixture_chk
+def test_RealtimeProvider_set_bus_1(server, seconds):
     provider = Provider.from_context(server)
-    seconds = time.time()
     with server.osc_protocol.capture() as transcript:
         with provider.at(seconds):
             bus_group_proxy = provider.add_bus_group(channel_count=4)
             for i, bus_proxy in enumerate(bus_group_proxy):
                 bus_proxy.set_(pow(2, i))
+    timestamp = seconds
+    if seconds is not None:
+        timestamp += provider.latency
+    id = int(bus_group_proxy.identifier)
     assert [entry.message.to_list() for entry in transcript] == [
-        [seconds + provider.latency, [["/c_set", 0, 1.0, 1, 2.0, 2, 4.0, 3, 8.0]]]
+        [timestamp, [["/c_set", id, 1.0, id + 1, 2.0, id + 2, 4.0, id + 3, 8.0]]]
     ]
 
 
-def test_RealtimeProvider_set_bus_error(server):
+@hp.given(seconds=st_seconds, set_val=st_f32_fin)
+@suppress_hp_server_fixture_chk
+def test_RealtimeProvider_set_bus_error(server, seconds, set_val):
     provider = Provider.from_context(server)
-    with provider.at(1.2345):
+    with provider.at(seconds):
         audio_bus_proxy = provider.add_bus(calculation_rate=CalculationRate.AUDIO)
         control_bus_proxy = provider.add_bus()
         with pytest.raises(ValueError):
-            audio_bus_proxy.set_(0.1234)
+            audio_bus_proxy.set_(set_val)
     with pytest.raises(ValueError):
-        control_bus_proxy.set_(0.1234)
+        control_bus_proxy.set_(set_val)
 
 
 @hp.given(seconds=st_seconds, set_val=st_f32_fin)

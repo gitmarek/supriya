@@ -1,3 +1,5 @@
+import hypothesis as hp
+import hypothesis.strategies as st
 import pytest
 from uqbar.strings import normalize
 
@@ -5,6 +7,7 @@ import supriya
 import supriya.assets.synthdefs
 import supriya.realtime
 from supriya.osc import OscBundle, OscMessage
+from tests.confhp import suppress_hp_server_fixture_chk
 
 
 @pytest.fixture(autouse=True)
@@ -1920,32 +1923,39 @@ def test_remove_01(server):
     assert not synth_d.is_allocated
 
 
-def test_allocate_parallel(server):
-    group = supriya.realtime.Group(parallel=True)
-    assert group.parallel
+@hp.given(parallel=st.booleans())
+@suppress_hp_server_fixture_chk
+def test_allocate_parallel(server, parallel):
+    group = supriya.realtime.Group(parallel=parallel)
+    assert group.parallel == parallel
     with server.osc_protocol.capture() as transcript:
         group.allocate(server)
-    server_state = str(server.query())
-    assert server_state == normalize(
-        """
-        NODE TREE 0 group
-            1 group
-                1000 group
-        """
-    )
-    assert [(_.label, _.message) for _ in transcript] == [
-        ("S", OscMessage("/p_new", 1000, 0, 1)),
-        ("R", OscMessage("/n_go", 1000, 1, -1, -1, 1, -1, -1)),
-    ]
+    osc_tag = "/g_new"
+    if parallel:
+        osc_tag = "/p_new"
+    msgs_sent = [_.message.to_list() for _ in transcript if _.label == "S"]
+    assert msgs_sent == [[osc_tag, group.node_id, 0, 1]]
 
 
-def test_add_group_parallel(server):
+@hp.given(parallel=st.booleans())
+@suppress_hp_server_fixture_chk
+def test_add_group_parallel(server, parallel):
     with server.osc_protocol.capture() as transcript:
-        server.add_group(parallel=True)
-        server.default_group.add_group(parallel=True)
-    assert [(_.label, _.message) for _ in transcript] == [
-        ("S", OscMessage("/p_new", 1000, 0, 1)),
-        ("R", OscMessage("/n_go", 1000, 1, -1, -1, 1, -1, -1)),
-        ("S", OscMessage("/p_new", 1001, 0, 1)),
-        ("R", OscMessage("/n_go", 1001, 1, -1, 1000, 1, -1, -1)),
-    ]
+        group = server.default_group.add_group(parallel=parallel)
+    osc_tag = "/g_new"
+    if parallel:
+        osc_tag = "/p_new"
+    msgs_sent = [_.message.to_list() for _ in transcript if _.label == "S"]
+    assert msgs_sent == [[osc_tag, group.node_id, 0, 1]]
+
+
+@hp.given(parallel=st.booleans())
+@suppress_hp_server_fixture_chk
+def test_server_add_group_parallel(server, parallel):
+    with server.osc_protocol.capture() as transcript:
+        group = server.add_group(parallel=parallel)
+    osc_tag = "/g_new"
+    if parallel:
+        osc_tag = "/p_new"
+    msgs_sent = [_.message.to_list() for _ in transcript if _.label == "S"]
+    assert msgs_sent == [[osc_tag, group.node_id, 0, 1]]

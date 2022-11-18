@@ -611,7 +611,7 @@ class Provider(metaclass=abc.ABCMeta):
 
     def at(self, seconds: Optional[float] = None, wait=False) -> ProviderMoment:
         if seconds:
-            if seconds < 0 or seconds > MAX_SECONDS:
+            if seconds < MIN_SECONDS or seconds > MAX_SECONDS:
                 raise ValueError
         if self._moments and self._moments[-1].seconds == seconds:
             provider_moment = self._moments[-1]
