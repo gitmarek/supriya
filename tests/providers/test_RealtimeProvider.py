@@ -575,3 +575,15 @@ def test_RealtimeProvider_add_group_parallel(server):
     assert [(_.label, _.message) for _ in transcript] == [
         ("S", OscBundle(contents=(OscMessage("/p_new", 1000, 0, 1),)))
     ]
+
+
+@pytest.mark.parametrize("seconds", [100, 2**31])
+def test_provider_at_seconds_too_large(server, seconds):
+    provider = Provider.from_context(server)
+    with server.osc_protocol.capture() as transcript:
+        with provider.at(seconds):
+            bus_proxy = provider.add_bus()
+            bus_proxy.set_(0)
+    assert [entry.message.to_list() for entry in transcript] == [
+        [seconds + provider.latency, [["/c_set", 0, 0.0]]]
+    ]
