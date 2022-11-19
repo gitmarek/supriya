@@ -1,4 +1,6 @@
 import hypothesis as hp
+import struct
+
 import pytest
 
 import supriya.realtime
@@ -163,3 +165,18 @@ def test_set(server, set_val):
     result = control_bus.get()
     assert result == set_val
     assert control_bus.value == result
+
+
+def test_set_double(server):
+
+    control_bus = server.add_bus()
+
+    control_bus.set(16777216.0)
+    result = control_bus.get()
+    assert result == 16777216.0
+
+    value = 16777217.0
+    restricted_value = struct.unpack("!f", struct.pack("!f", value))[0]
+    control_bus.set(restricted_value)
+    result = control_bus.get()
+    assert result == restricted_value
