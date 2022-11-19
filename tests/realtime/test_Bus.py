@@ -1,6 +1,7 @@
-import hypothesis as hp
 import struct
 
+import hypothesis as hp
+import hypothesis.strategies as st
 import pytest
 
 import supriya.realtime
@@ -154,7 +155,6 @@ def test_allocate_04(server):
 def test_set(server, set_val):
 
     control_bus = server.add_bus()
-
     assert control_bus.is_allocated
 
     result = control_bus.get()
@@ -167,16 +167,14 @@ def test_set(server, set_val):
     assert control_bus.value == result
 
 
-def test_set_double(server):
+@hp.given(set_val=st.floats())
+@suppress_hp_server_fixture_chk
+def test_set_double(server, set_val):
 
     control_bus = server.add_bus()
+    assert control_bus.is_allocated
 
-    control_bus.set(16777216.0)
-    result = control_bus.get()
-    assert result == 16777216.0
-
-    value = 16777217.0
-    restricted_value = struct.unpack("!f", struct.pack("!f", value))[0]
+    restricted_value = struct.unpack("!f", struct.pack("!f", set_val))[0]
     control_bus.set(restricted_value)
     result = control_bus.get()
     assert result == restricted_value
