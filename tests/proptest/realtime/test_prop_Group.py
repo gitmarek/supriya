@@ -45,7 +45,7 @@ def st_group_sample(draw) -> SampleGroup:
 
     parallel = draw(st.booleans())
     group = supriya.realtime.Group(parallel=parallel)
-    allocate_pattern = draw(st.lists(st.booleans(), min_size=8, max_size=128))
+    allocate_pattern = draw(st.lists(st.booleans(), min_size=2, max_size=32))
     sample = SampleGroup(group, parallel=parallel, allocate_pattern=allocate_pattern)
 
     return sample
@@ -171,8 +171,6 @@ def test_allocate_03(server, strategy):
                 #  sample.group.append(synth_a)
             else:
                 sample.group.free()
-        server.sync()
-        for i, should_allocate in enumerate(allocate_frame):
             assert test[i].group.is_allocated is should_allocate
 
     for sample in control:
