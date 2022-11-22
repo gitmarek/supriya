@@ -7,6 +7,8 @@ import hypothesis.strategies as st
 import supriya.realtime
 from tests.proptest import hp_global_settings
 
+import pytest
+
 hp_settings = hypothesis.settings(hp_global_settings, max_examples=200)
 
 
@@ -16,9 +18,9 @@ class Sample:
     heap_minimum: int = 0
     heap_maximum: int = 1048576
     heap_min_size: int = 64
-    block_sizes: Tuple[int] = (1,)
-    allocate_at_indices: Tuple[int] = (1,)
-    free_at_indices: Tuple[int] = (1,)
+    block_sizes: Tuple[int] = (0,)
+    allocate_at_indices: Tuple[int] = (0,)
+    free_at_indices: Tuple[int] = (0,)
 
 
 @st.composite
@@ -97,7 +99,7 @@ def test_allocate_at(sample):
 
 
 @hypothesis.settings(hp_settings, deadline=None)
-@hypothesis.given(sample=st_block_allocator(min_blocks_num=2, max_block_size=64))
+@hypothesis.given(sample=st_block_allocator(min_blocks_num=16, max_block_size=512))
 def test_allocate_at_and_free(sample):
 
     available_indices = {
