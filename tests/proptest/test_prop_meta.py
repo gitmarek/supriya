@@ -9,7 +9,7 @@ hp_settings = hypothesis.settings(hp_global_settings)
 
 
 @dataclass
-class Sample:
+class SampleMeta:
 
     val_bool: bool
     val_int: int
@@ -17,11 +17,22 @@ class Sample:
     val_text: str = ""
 
 
+@st.composite
+def st_test_strategy(draw) -> SampleMeta:
+
+    sample = SampleMeta(draw(st.booleans()), draw(st.integers()))
+
+    sample.val_float = draw(st.floats(allow_infinity=False, allow_nan=False))
+    sample.val_text = draw(st.text())
+
+    return sample
+
+
 @get_control_test_groups()
 @st.composite
-def st_test_strategy_01(draw):
+def st_test_strategy_control_group(draw) -> SampleMeta:
 
-    sample = Sample(draw(st.booleans()), draw(st.integers()))
+    sample = SampleMeta(draw(st.booleans()), draw(st.integers()))
 
     sample.val_float = draw(st.floats(allow_infinity=False, allow_nan=False))
     sample.val_text = draw(st.text())
@@ -30,8 +41,19 @@ def st_test_strategy_01(draw):
 
 
 @hypothesis.settings(hp_settings)
-@hypothesis.given(strategy=st_test_strategy_01())
-def test_composite_strategy_01(strategy):
+@hypothesis.given(sample=st_test_strategy())
+def test_composite_strategy_01(sample):
+
+    assert isinstance(sample, SampleMeta)
+    assert isinstance(sample.val_bool, bool)
+    assert isinstance(sample.val_int, int)
+    assert isinstance(sample.val_float, float)
+    assert isinstance(sample.val_text, str)
+
+
+@hypothesis.settings(hp_settings)
+@hypothesis.given(strategy=st_test_strategy_control_group())
+def test_composite_strategy_02(strategy):
 
     assert isinstance(strategy, tuple)
     assert len(strategy) == 2
@@ -40,7 +62,7 @@ def test_composite_strategy_01(strategy):
     assert isinstance(test, list)
     assert len(control) >= 1
     assert len(test) >= 1
-    assert all(isinstance(_, Sample) for _ in control + test)
+    assert all(isinstance(_, SampleMeta) for _ in control + test)
     assert all(isinstance(_.val_bool, bool) for _ in control + test)
     assert all(isinstance(_.val_int, int) for _ in control + test)
     assert all(isinstance(_.val_float, float) for _ in control + test)
