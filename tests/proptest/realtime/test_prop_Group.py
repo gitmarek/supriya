@@ -8,6 +8,7 @@ import pytest
 import supriya.assets
 import supriya.realtime
 import supriya.synthdefs
+from supriya.osc.messages import OscMessage
 from tests.proptest import get_control_test_groups, hp_global_settings
 
 
@@ -37,6 +38,17 @@ class SampleGroup:
     name: Optional[str] = None
     node_id_is_permanent: bool = False
     parallel: bool = False
+
+
+@st.composite
+def st_group_sample(draw) -> SampleGroup:
+
+    parallel = draw(st.booleans())
+    group = supriya.realtime.Group(parallel=parallel)
+    allocate_pattern = draw(st.lists(st.booleans(), min_size=8, max_size=128))
+    sample = SampleGroup(group, parallel=parallel, allocate_pattern=allocate_pattern)
+
+    return sample
 
 
 @get_control_test_groups(min_size=1, max_size=64)
@@ -165,3 +177,37 @@ def test_allocate_03(server, strategy):
 
     for sample in control:
         assert sample.group.is_allocated
+
+
+@hypothesis.settings(hp_settings)
+@hypothesis.given(sample=st_group_sample())
+def test_group_allocate_04(server, sample):
+
+    osc_tag = "/g_new"
+    if sample.parallel:
+        osc_tag = "/p_new"
+
+    for should_allocate in sample.allocate_pattern:
+        if should_allocate:
+            with server.osc_protocol.capture() as transcript:
+                sample.group.allocate(server)
+            assert sample.group.is_allocated
+            assert [
+                _.message
+                for _ in transcript
+                if _.message.address not in ("/status", "/status.reply", "/sync")
+                and _.label == "S"
+            ] == [OscMessage(osc_tag, sample.group.node_id, 0, 1)]
+            sample.group.free()
+        else:
+            sample.group.allocate(server)
+            node_id = sample.group.node_id
+            with server.osc_protocol.capture() as transcript:
+                sample.group.free()
+            assert not sample.group.is_allocated
+            assert [
+                _.message
+                for _ in transcript
+                if _.message.address not in ("/status", "/status.reply", "/sync")
+                and _.label == "S"
+            ] == [OscMessage("/n_free", node_id)]
