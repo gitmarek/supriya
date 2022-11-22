@@ -12,7 +12,17 @@ from supriya import CalculationRate
 from supriya.exceptions import BusAlreadyAllocated, BusNotAllocated, IncompatibleRate
 from tests.proptest import get_control_test_groups, hp_global_settings
 
-# ### Hypothesis strategies ### #
+
+@pytest.fixture(autouse=True)
+def shutdown_sync_servers(shutdown_scsynth):
+    pass
+
+
+@pytest.fixture
+def server(persistent_server):
+    persistent_server.reset()
+    persistent_server.add_synthdef(supriya.assets.synthdefs.default)
+    yield persistent_server
 
 
 hp_settings = hypothesis.settings(
@@ -58,24 +68,6 @@ def st_bus(
     sample.bus_group_or_index = bus_group_or_index
 
     return sample
-
-
-# ### FIXTURES ### #
-
-
-@pytest.fixture(autouse=True)
-def shutdown_sync_servers(shutdown_scsynth):
-    pass
-
-
-@pytest.fixture
-def server(persistent_server):
-    persistent_server.reset()
-    persistent_server.add_synthdef(supriya.assets.synthdefs.default)
-    yield persistent_server
-
-
-# ### Tests ### #
 
 
 @hypothesis.settings(hp_settings)
