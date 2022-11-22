@@ -22,7 +22,7 @@ hp_settings = hypothesis.settings(
 
 
 @dataclass
-class Sample:
+class SampleBusGroup:
     bus_group: supriya.realtime.BusGroup
     calculation_rate: CalculationRate
     bus_count: int
@@ -35,7 +35,7 @@ def st_bus_group(
     draw,
     max_bus_count=16,
     calculation_rates=((CalculationRate.AUDIO, CalculationRate.CONTROL)),
-):
+) -> SampleBusGroup:
 
     bus_count = draw(st.integers(min_value=1, max_value=max_bus_count))
     calculation_rate = draw(st.sampled_from(calculation_rates))
@@ -43,7 +43,7 @@ def st_bus_group(
         bus_count=bus_count, calculation_rate=calculation_rate
     )
 
-    sample = Sample(bus_group, calculation_rate, bus_count)
+    sample = SampleBusGroup(bus_group, calculation_rate, bus_count)
     sample.set_values = tuple(
         draw(st.floats(width=32, allow_infinity=False, allow_nan=False))
         for _ in range(bus_count)

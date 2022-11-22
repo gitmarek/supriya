@@ -23,7 +23,7 @@ hp_settings = hypothesis.settings(
 
 
 @dataclass
-class Sample:
+class SampleBus:
     bus: supriya.realtime.Bus
     calculation_rate: CalculationRate
     bus_group_or_index: Optional[int] = None
@@ -38,11 +38,13 @@ def st_bus(
     draw,
     calculation_rates=((CalculationRate.AUDIO, CalculationRate.CONTROL)),
     user_id: bool = False,
-):
+) -> SampleBus:
 
     if user_id:
         bus_group_or_index = draw(
-            st.integers(min_value=Sample.bus_index_min, max_value=Sample.bus_index_max)
+            st.integers(
+                min_value=SampleBus.bus_index_min, max_value=SampleBus.bus_index_max
+            )
         )
     else:
         bus_group_or_index = None
@@ -50,7 +52,7 @@ def st_bus(
     bus = supriya.realtime.Bus(
         bus_group_or_index=bus_group_or_index, calculation_rate=calculation_rate
     )
-    sample = Sample(bus, calculation_rate)
+    sample = SampleBus(bus, calculation_rate)
 
     sample.set_value = draw(st.floats(width=32, allow_infinity=False, allow_nan=False))
     sample.bus_group_or_index = bus_group_or_index

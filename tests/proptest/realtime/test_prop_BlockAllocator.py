@@ -7,13 +7,11 @@ import hypothesis.strategies as st
 import supriya.realtime
 from tests.proptest import hp_global_settings
 
-import pytest
-
 hp_settings = hypothesis.settings(hp_global_settings, max_examples=200)
 
 
 @dataclass
-class Sample:
+class SampleBlockAllocator:
     allocator: supriya.realtime.BlockAllocator
     heap_minimum: int = 0
     heap_maximum: int = 1048576
@@ -26,24 +24,28 @@ class Sample:
 @st.composite
 def st_block_allocator(
     draw, min_blocks_num: int = 1, max_block_size: Optional[int] = None
-):
+) -> SampleBlockAllocator:
 
     heap_minimum = draw(
         st.integers(
-            min_value=Sample.heap_minimum,
-            max_value=Sample.heap_maximum - Sample.heap_min_size,
+            min_value=SampleBlockAllocator.heap_minimum,
+            max_value=SampleBlockAllocator.heap_maximum
+            - SampleBlockAllocator.heap_min_size,
         )
     )
     heap_maximum = draw(
         st.integers(
-            min_value=heap_minimum + Sample.heap_min_size, max_value=Sample.heap_maximum
+            min_value=heap_minimum + SampleBlockAllocator.heap_min_size,
+            max_value=SampleBlockAllocator.heap_maximum,
         )
     )
     allocator = supriya.realtime.BlockAllocator(
         heap_minimum=heap_minimum, heap_maximum=heap_maximum
     )
 
-    sample = Sample(allocator, heap_minimum=heap_minimum, heap_maximum=heap_maximum)
+    sample = SampleBlockAllocator(
+        allocator, heap_minimum=heap_minimum, heap_maximum=heap_maximum
+    )
 
     if not max_block_size:
         max_block_size = heap_maximum - heap_minimum
