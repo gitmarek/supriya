@@ -100,7 +100,7 @@ def test_allocate_01(server, strategy):
             assert bus.bus_id == sample.bus_group.bus_id + i
             assert sample.bus_group.index(bus) == i
     assert all(_.bus_group.is_allocated for _ in test)
-    all(_.bus_group.free() for _ in test)
+    assert all(_.bus_group.free() for _ in test)
     assert not any(_.bus_group.is_allocated for _ in test)
 
     for sample in control:
@@ -120,7 +120,7 @@ def test_getset(server, strategy):
 
     control, test = strategy
 
-    all(_.bus_group.allocate(server) for _ in control + test)
+    assert all(_.bus_group.allocate(server) for _ in control + test)
     assert all(_.bus_group.is_allocated for _ in control + test)
     control_vals = tuple(_.bus_group.get() for _ in control)
 
@@ -130,7 +130,7 @@ def test_getset(server, strategy):
         assert results == sample.set_values
 
     assert control_vals == tuple(_.bus_group.get() for _ in control)
-    all(_.bus_group.free() for _ in control + test)
+    assert all(_.bus_group.free() for _ in control + test)
     assert not any(_.bus_group.is_allocated for _ in control + test)
 
 
@@ -140,7 +140,7 @@ def test_fill(server, strategy):
 
     control, test = strategy
 
-    all(_.bus_group.allocate(server) for _ in control + test)
+    assert all(_.bus_group.allocate(server) for _ in control + test)
     assert all(_.bus_group.is_allocated for _ in control + test)
     control_vals = tuple(_.bus_group.get() for _ in control)
 
@@ -151,7 +151,7 @@ def test_fill(server, strategy):
         assert results == tuple(val for _ in range(sample.bus_count))
 
     assert control_vals == tuple(_.bus_group.get() for _ in control)
-    all(_.bus_group.free() for _ in control + test)
+    assert all(_.bus_group.free() for _ in control + test)
     assert not any(_.bus_group.is_allocated for _ in control + test)
 
 

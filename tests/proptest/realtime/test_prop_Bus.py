@@ -83,7 +83,7 @@ def test_allocate_01(server, strategy):
         assert sample.bus.server is None
         assert sample.bus.bus_id is None
 
-    all(_.bus.allocate(server) for _ in test)
+    assert all(_.bus.allocate(server) for _ in test)
     bus_audio_count = 0
     bus_control_count = 0
     for sample in test:
@@ -103,7 +103,7 @@ def test_allocate_01(server, strategy):
             assert int(sample.bus) == bus_audio_count + first_audio_bus
             assert float(sample.bus) == float(bus_audio_count + first_audio_bus)
             bus_audio_count += 1
-    all(_.bus.free() for _ in test)
+    assert all(_.bus.free() for _ in test)
     assert not any(_.bus.is_allocated for _ in test)
     for sample in test:
         assert sample.bus.bus_group is None
@@ -158,7 +158,7 @@ def test_getset(server, strategy):
 
     control, test = strategy
 
-    all(_.bus.allocate(server) for _ in control + test)
+    assert all(_.bus.allocate(server) for _ in control + test)
     assert all(_.bus.is_allocated for _ in control + test)
     control_vals = tuple(_.bus.get() for _ in control)
 
@@ -168,7 +168,7 @@ def test_getset(server, strategy):
         assert sample.bus.value == sample.set_value
 
     assert control_vals == tuple(_.bus.get() for _ in control)
-    all(_.bus.free() for _ in control + test)
+    assert all(_.bus.free() for _ in control + test)
     assert not any(_.bus.is_allocated for _ in control + test)
 
 

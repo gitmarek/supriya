@@ -8,8 +8,6 @@ import pytest
 import supriya.assets
 import supriya.realtime
 import supriya.synthdefs
-from supriya import CalculationRate
-from supriya.exceptions import BusAlreadyAllocated, BusNotAllocated, IncompatibleRate
 from tests.proptest import get_control_test_groups, hp_global_settings
 
 
@@ -21,7 +19,7 @@ def shutdown_sync_servers(shutdown_scsynth):
 @pytest.fixture
 def server(persistent_server):
     persistent_server.reset()
-    #persistent_server.add_synthdef(supriya.assets.synthdefs.default)
+    # persistent_server.add_synthdef(supriya.assets.synthdefs.default)
     yield persistent_server
 
 
@@ -60,7 +58,7 @@ def test_allocate_01(server, strategy):
         assert not sample.group.is_allocated
         assert not sample.group.is_paused
         assert sample.group.server is None
-        assert not sample.group.node_id_is_permanent 
+        assert not sample.group.node_id_is_permanent
         assert sample.group.parallel == sample.parallel
 
     for sample in test:
@@ -70,18 +68,16 @@ def test_allocate_01(server, strategy):
         assert sample.group.is_allocated
         assert not sample.group.is_paused
         assert sample.group.server == server
-        assert not sample.group.node_id_is_permanent 
+        assert not sample.group.node_id_is_permanent
         assert sample.group.parallel == sample.parallel
     for sample in test:
         sample.group.free()
     server.sync()
     assert not any(_.group.is_allocated for _ in test)
 
-
     for sample in control:
         assert not sample.group.is_allocated
         assert not sample.group.is_paused
         assert sample.group.server is None
-        assert not sample.group.node_id_is_permanent 
+        assert not sample.group.node_id_is_permanent
         assert sample.group.parallel == sample.parallel
-
