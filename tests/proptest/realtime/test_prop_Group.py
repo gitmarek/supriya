@@ -27,7 +27,7 @@ def server(persistent_server):
 hp_settings = hypothesis.settings(
     hp_global_settings,
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
-    deadline=999,
+    deadline=1999,
 )
 
 
@@ -45,13 +45,13 @@ def st_group_sample(draw) -> SampleGroup:
 
     parallel = draw(st.booleans())
     group = supriya.realtime.Group(parallel=parallel)
-    allocate_pattern = draw(st.lists(st.booleans(), min_size=2, max_size=32))
+    allocate_pattern = draw(st.lists(st.booleans(), min_size=2, max_size=16))
     sample = SampleGroup(group, parallel=parallel, allocate_pattern=allocate_pattern)
 
     return sample
 
 
-@get_control_test_groups(min_size=1, max_size=64)
+@get_control_test_groups(min_size=1, max_size=16)
 @st.composite
 def st_group(draw) -> SampleGroup:
 
@@ -59,7 +59,7 @@ def st_group(draw) -> SampleGroup:
     node_id_is_permanent = draw(st.booleans())
     parallel = draw(st.booleans())
     group = supriya.realtime.Group(name=name, parallel=parallel)
-    allocate_pattern = draw(st.lists(st.booleans(), min_size=2, max_size=32))
+    allocate_pattern = draw(st.lists(st.booleans(), min_size=8, max_size=16))
     sample = SampleGroup(
         group,
         name=name,
@@ -176,6 +176,7 @@ def test_allocate_03(server, strategy):
 
     for sample in control:
         assert sample.group.is_allocated
+        sample.group.free()
 
 
 @hypothesis.settings(hp_settings)
