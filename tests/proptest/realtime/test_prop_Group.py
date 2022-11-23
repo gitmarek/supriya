@@ -59,7 +59,7 @@ def st_group(draw) -> SampleGroup:
     node_id_is_permanent = draw(st.booleans())
     parallel = draw(st.booleans())
     group = supriya.realtime.Group(name=name, parallel=parallel)
-    allocate_pattern = draw(st.lists(st.booleans(), min_size=8, max_size=128))
+    allocate_pattern = draw(st.lists(st.booleans(), min_size=2, max_size=32))
     sample = SampleGroup(
         group,
         name=name,
@@ -172,6 +172,7 @@ def test_allocate_03(server, strategy):
             else:
                 sample.group.free()
             assert test[i].group.is_allocated is should_allocate
+            sample.group.free()
 
     for sample in control:
         assert sample.group.is_allocated
