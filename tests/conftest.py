@@ -44,7 +44,7 @@ async def persistent_async_server(event_loop):
     server = supriya.AsyncServer()
     await server.boot(port=supriya.osc.utils.find_free_port())
     provider = supriya.Provider.from_context(server)
-    async with provider.at():
+    async with provider.at(0.0):
         synth_p = provider.add_synth()
         synth_p.free()
     yield server
