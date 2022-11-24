@@ -143,7 +143,6 @@ def test_allocate_02(server, strategy):
         assert not sample.bus.is_allocated
         assert sample.bus.server is None
         assert sample.bus.bus_group is None
-    server.sync()
 
     for sample in control:
         assert sample.bus.bus_id == sample.bus_group_or_index
@@ -196,7 +195,6 @@ def test_exceptions(server):
         bus.allocate(server)
     for bus in buses:
         bus.free()
-    server.sync()
 
     for rate in ("control", "audio"):
         bus = supriya.realtime.Bus(calculation_rate=rate)
@@ -208,7 +206,6 @@ def test_exceptions(server):
             bus.allocate(server)
         bus.free()
         assert not bus.is_allocated
-        server.sync()
 
     bus = supriya.realtime.Bus()
     assert not bus.value
