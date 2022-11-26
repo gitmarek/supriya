@@ -3,18 +3,13 @@ from dataclasses import dataclass
 import hypothesis
 import hypothesis.strategies as st
 
-from tests.proptest.setup import (
-    ControlTestGroups,
-    DrawStrategy,
-    get_control_test_groups,
-    hp_global_settings,
-)
+from tests.proptest.setup import CTGr, TestSample, get_CTGr, hp_global_settings
 
 hp_settings = hypothesis.settings(hp_global_settings)
 
 
 @dataclass
-class SampleMeta:
+class SampleMeta(TestSample):
 
     val_bool: bool
     val_int: int
@@ -23,7 +18,7 @@ class SampleMeta:
 
 
 @st.composite
-def st_test_strategy(draw: DrawStrategy) -> SampleMeta:
+def st_test_strategy(draw: st.DrawFn) -> SampleMeta:
 
     sample = SampleMeta(draw(st.booleans()), draw(st.integers()))
 
@@ -33,9 +28,9 @@ def st_test_strategy(draw: DrawStrategy) -> SampleMeta:
     return sample
 
 
-@get_control_test_groups()
+@get_CTGr()
 @st.composite
-def st_test_strategy_control_group(draw: DrawStrategy) -> SampleMeta:
+def st_test_strategy_control_group(draw: st.DrawFn) -> SampleMeta:
 
     sample = SampleMeta(draw(st.booleans()), draw(st.integers()))
 
@@ -58,7 +53,7 @@ def test_composite_strategy_01(sample: SampleMeta) -> None:
 
 @hypothesis.settings(hp_settings)
 @hypothesis.given(strategy=st_test_strategy_control_group())
-def test_composite_strategy_02(strategy: ControlTestGroups[SampleMeta]) -> None:
+def test_composite_strategy_02(strategy: CTGr[SampleMeta]) -> None:
 
     assert isinstance(strategy, tuple)
     assert len(strategy) == 2

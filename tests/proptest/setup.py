@@ -1,23 +1,32 @@
-from typing import Any, Callable, List, Optional, ParamSpec, Tuple, TypeVar
+from typing import Callable, ParamSpec, TypeVar
 
 import hypothesis
 import hypothesis.strategies as st
 
-T = TypeVar("T")
-F = Callable[..., Any]
 P = ParamSpec("P")
-DrawStrategy = Callable[[st.SearchStrategy], Any]
-ControlTestGroups = Tuple[List[T], List[T]]
+T = TypeVar("T", covariant=True)
+CTGr = tuple[list[T], list[T]]
 
 hp_global_settings = hypothesis.settings()
 
 
-def get_control_test_groups(
-    min_size: int = 1, max_size: Optional[int] = None
-) -> Callable[[F], F]:
-    def _wrapper(func: F) -> F:
-        def _st_func(*args: P.args, **kwargs: P.kwargs) -> st.SearchStrategy[Any]:
-            strategy = func(*args, **kwargs)
+class TestSample:
+    ...
+
+
+def get_CTGr(
+    min_size: int = 1, max_size: int | None = None
+) -> Callable[
+    [Callable[..., st.SearchStrategy[TestSample]]],
+    Callable[..., st.SearchStrategy[CTGr[TestSample]]],
+]:
+    def _wrapper(
+        func: Callable[..., st.SearchStrategy[TestSample]]
+    ) -> Callable[..., st.SearchStrategy[CTGr[TestSample]]]:
+        def _st_func(
+            *args: P.args, **kwargs: P.kwargs
+        ) -> st.SearchStrategy[CTGr[TestSample]]:
+            strategy: st.SearchStrategy[TestSample] = func(*args, **kwargs)
             return st.tuples(
                 st.lists(strategy, min_size=min_size, max_size=max_size),
                 st.lists(strategy, min_size=min_size, max_size=max_size),
