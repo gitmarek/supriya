@@ -10,7 +10,7 @@ import supriya.realtime
 import supriya.synthdefs
 from supriya import CalculationRate
 from supriya.exceptions import BusAlreadyAllocated, BusNotAllocated, IncompatibleRate
-from tests.proptest import get_control_test_groups, hp_global_settings
+from tests.proptest.setup import get_control_test_groups, hp_global_settings
 
 
 @pytest.fixture(autouse=True)

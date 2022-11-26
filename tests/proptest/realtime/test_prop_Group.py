@@ -9,7 +9,7 @@ import supriya.assets
 import supriya.realtime
 import supriya.synthdefs
 from supriya.osc.messages import OscMessage
-from tests.proptest import get_control_test_groups, hp_global_settings
+from tests.proptest.setup import get_control_test_groups, hp_global_settings
 
 
 @pytest.fixture(autouse=True)

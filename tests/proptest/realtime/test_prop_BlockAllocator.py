@@ -5,7 +5,7 @@ import hypothesis
 import hypothesis.strategies as st
 
 import supriya.realtime
-from tests.proptest import hp_global_settings
+from tests.proptest.setup import hp_global_settings
 
 hp_settings = hypothesis.settings(hp_global_settings, max_examples=200)
 

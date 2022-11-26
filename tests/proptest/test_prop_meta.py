@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import hypothesis
 import hypothesis.strategies as st
 
-from tests.proptest import get_control_test_groups, hp_global_settings
+from tests.proptest.setup import get_control_test_groups, hp_global_settings
 
 hp_settings = hypothesis.settings(hp_global_settings)
 
