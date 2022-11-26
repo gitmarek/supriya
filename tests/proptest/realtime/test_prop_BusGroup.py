@@ -10,7 +10,7 @@ import supriya.realtime
 import supriya.synthdefs
 from supriya import CalculationRate
 from supriya.exceptions import BusNotAllocated, IncompatibleRate
-from tests.proptest.setup import get_control_test_groups, hp_global_settings
+from tests.proptest.setup import TestSample, get_CTGr, hp_global_settings
 
 
 @pytest.fixture(autouse=True)
@@ -33,17 +33,17 @@ hp_settings = hypothesis.settings(
 
 
 @dataclass
-class SampleBusGroup:
+class SampleBusGroup(TestSample):
     bus_group: supriya.realtime.BusGroup
     calculation_rate: CalculationRate
     bus_count: int
     set_values: Tuple[float] = (0.0,)
 
 
-@get_control_test_groups(max_size=64)
+@get_CTGr(max_size=64)
 @st.composite
 def st_bus_group(
-    draw,
+    draw: st.DrawFn,
     max_bus_count=16,
     calculation_rates=((CalculationRate.AUDIO, CalculationRate.CONTROL)),
 ) -> SampleBusGroup:

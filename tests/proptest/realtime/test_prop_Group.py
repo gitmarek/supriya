@@ -9,7 +9,7 @@ import supriya.assets
 import supriya.realtime
 import supriya.synthdefs
 from supriya.osc.messages import OscMessage
-from tests.proptest.setup import get_control_test_groups, hp_global_settings
+from tests.proptest.setup import TestSample, get_CTGr, hp_global_settings
 
 
 @pytest.fixture(autouse=True)
@@ -32,7 +32,7 @@ hp_settings = hypothesis.settings(
 
 
 @dataclass
-class SampleGroup:
+class SampleGroup(TestSample):
     group: supriya.realtime.Group
     allocate_pattern: List[bool]
     name: Optional[str] = None
@@ -41,7 +41,7 @@ class SampleGroup:
 
 
 @st.composite
-def st_group_sample(draw) -> SampleGroup:
+def st_group_sample(draw: st.DrawFn) -> SampleGroup:
 
     parallel = draw(st.booleans())
     group = supriya.realtime.Group(parallel=parallel)
@@ -51,9 +51,9 @@ def st_group_sample(draw) -> SampleGroup:
     return sample
 
 
-@get_control_test_groups(min_size=1, max_size=16)
+@get_CTGr(min_size=1, max_size=16)
 @st.composite
-def st_group(draw) -> SampleGroup:
+def st_group(draw: st.DrawFn) -> SampleGroup:
 
     name = draw(st.one_of(st.text(), st.none()))
     node_id_is_permanent = draw(st.booleans())
