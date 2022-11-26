@@ -1,10 +1,13 @@
-from typing import Any, Callable, Optional, ParamSpec
+from typing import Any, Callable, List, Optional, ParamSpec, Tuple, TypeVar
 
 import hypothesis
 import hypothesis.strategies as st
 
+T = TypeVar("T")
 F = Callable[..., Any]
 P = ParamSpec("P")
+DrawStrategy = Callable[[st.SearchStrategy], Any]
+ControlTestGroups = Tuple[List[T], List[T]]
 
 hp_global_settings = hypothesis.settings()
 
