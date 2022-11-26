@@ -87,7 +87,6 @@ def test_allocate_01(server, strategy):
 
     for sample in test:
         sample.group.allocate(server)
-    server.sync()
     for sample in test:
         assert sample.group.is_allocated
         assert not sample.group.is_paused
@@ -113,7 +112,6 @@ def test_allocate_02(server, strategy):
 
     for sample in test + control:
         sample.group.allocate(server)
-    server.sync()
 
     for sample in control:
         assert sample.group.is_allocated
@@ -125,7 +123,6 @@ def test_allocate_02(server, strategy):
 
     for sample in test:
         sample.group.free()
-    server.sync()
     for sample in test:
         assert not sample.group.is_allocated
         assert not sample.group.is_paused
@@ -151,7 +148,6 @@ def test_allocate_03(server, strategy):
 
     for sample in test + control:
         sample.group.allocate(server)
-    server.sync()
 
     for sample in control:
         assert sample.group.is_allocated
