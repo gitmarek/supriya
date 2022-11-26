@@ -1,9 +1,8 @@
-from typing import Callable, ParamSpec, TypeVar
+from typing import Callable, TypeVar
 
 import hypothesis
 import hypothesis.strategies as st
 
-P = ParamSpec("P")
 T = TypeVar("T", covariant=True)
 CTGr = tuple[list[T], list[T]]
 
@@ -23,9 +22,7 @@ def get_CTGr(
     def _wrapper(
         func: Callable[..., st.SearchStrategy[TestSample]]
     ) -> Callable[..., st.SearchStrategy[CTGr[TestSample]]]:
-        def _st_func(
-            *args: P.args, **kwargs: P.kwargs
-        ) -> st.SearchStrategy[CTGr[TestSample]]:
+        def _st_func(*args, **kwargs) -> st.SearchStrategy[CTGr[TestSample]]:
             strategy: st.SearchStrategy[TestSample] = func(*args, **kwargs)
             return st.tuples(
                 st.lists(strategy, min_size=min_size, max_size=max_size),
