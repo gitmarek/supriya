@@ -5,7 +5,8 @@ import hypothesis
 import hypothesis.strategies as st
 
 import supriya.realtime
-from tests.proptest.setup import hp_global_settings
+
+from tests.proptest.utils import hp_global_settings
 
 hp_settings = hypothesis.settings(hp_global_settings, max_examples=200)
 
@@ -23,7 +24,7 @@ class SampleBlockAllocator:
 
 @st.composite
 def st_block_allocator(
-    draw, min_blocks_num: int = 1, max_block_size: Optional[int] = None
+    draw: st.DrawFn, min_blocks_num: int = 1, max_block_size: Optional[int] = None
 ) -> SampleBlockAllocator:
 
     heap_minimum = draw(

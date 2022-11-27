@@ -9,7 +9,9 @@ import supriya.assets
 import supriya.realtime
 import supriya.synthdefs
 from supriya.osc.messages import OscMessage
-from tests.proptest.setup import TestSample, get_CTGr, hp_global_settings
+from supriya.realtime import Server
+
+from tests.proptest.utils import CTGr, TestSample, get_CTGr, hp_global_settings
 
 
 @pytest.fixture(autouse=True)
@@ -72,76 +74,7 @@ def st_group(draw: st.DrawFn) -> SampleGroup:
 
 @hypothesis.settings(hp_settings)
 @hypothesis.given(strategy=st_group())
-def test_allocate_01(server, strategy):
-
-    control, test = strategy
-
-    for sample in control:
-        assert not sample.group.is_allocated
-        assert not sample.group.is_paused
-        assert sample.group.server is None
-        assert not sample.group.node_id_is_permanent
-        assert sample.group.name == sample.name
-        assert sample.group.parallel == sample.parallel
-
-    for sample in test:
-        sample.group.allocate(server)
-    for sample in test:
-        assert sample.group.is_allocated
-        assert not sample.group.is_paused
-        assert sample.group.server == server
-        assert not sample.group.node_id_is_permanent
-        assert sample.group.parallel == sample.parallel
-        assert sample.group.name == sample.name
-
-    for sample in control:
-        assert not sample.group.is_allocated
-        assert not sample.group.is_paused
-        assert sample.group.server is None
-        assert not sample.group.node_id_is_permanent
-        assert sample.group.parallel == sample.parallel
-        assert sample.group.name == sample.name
-
-
-@hypothesis.settings(hp_settings)
-@hypothesis.given(strategy=st_group())
-def test_allocate_02(server, strategy):
-
-    control, test = strategy
-
-    for sample in test + control:
-        sample.group.allocate(server)
-
-    for sample in control:
-        assert sample.group.is_allocated
-        assert not sample.group.is_paused
-        assert sample.group.server == server
-        assert not sample.group.node_id_is_permanent
-        assert sample.group.parallel == sample.parallel
-        assert sample.group.name == sample.name
-
-    for sample in test:
-        sample.group.free()
-    for sample in test:
-        assert not sample.group.is_allocated
-        assert not sample.group.is_paused
-        assert sample.group.server is None
-        assert not sample.group.node_id_is_permanent
-        assert sample.group.name == sample.name
-        assert sample.group.parallel == sample.parallel
-
-    for sample in control:
-        assert sample.group.is_allocated
-        assert not sample.group.is_paused
-        assert sample.group.server == server
-        assert not sample.group.node_id_is_permanent
-        assert sample.group.parallel == sample.parallel
-        assert sample.group.name == sample.name
-
-
-@hypothesis.settings(hp_settings)
-@hypothesis.given(strategy=st_group())
-def test_allocate_03(server, strategy):
+def test_allocate_03(server: Server, strategy: CTGr[SampleGroup]) -> None:
 
     control, test = strategy
 
@@ -176,7 +109,7 @@ def test_allocate_03(server, strategy):
 
 @hypothesis.settings(hp_settings)
 @hypothesis.given(sample=st_group_sample())
-def test_group_allocate_04(server, sample):
+def test_group_allocate_04(server: Server, sample: SampleGroup) -> None:
 
     osc_tag = "/g_new"
     if sample.parallel:

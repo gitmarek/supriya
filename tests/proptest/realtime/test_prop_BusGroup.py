@@ -9,8 +9,9 @@ import supriya.assets
 import supriya.realtime
 import supriya.synthdefs
 from supriya import CalculationRate
-from supriya.exceptions import BusNotAllocated, IncompatibleRate
-from tests.proptest.setup import TestSample, get_CTGr, hp_global_settings
+from supriya.realtime import Server
+
+from tests.proptest.utils import CTGr, TestSample, get_CTGr, hp_global_settings
 
 
 @pytest.fixture(autouse=True)
@@ -63,59 +64,8 @@ def st_bus_group(
 
 
 @hypothesis.settings(hp_settings)
-@hypothesis.given(strategy=st_bus_group())
-def test_allocate_01(server, strategy):
-
-    control, test = strategy
-
-    for sample in control:
-        assert not sample.bus_group.is_allocated
-        assert sample.bus_group.bus_id is None
-        assert sample.bus_group.server is None
-        for bus in sample.bus_group:
-            assert not bus.is_allocated
-            assert bus.bus_group is sample.bus_group
-            assert bus.bus_id is None
-            assert bus.calculation_rate == sample.calculation_rate
-
-    bus_control_count = 0
-    bus_audio_count = server.options.first_private_bus_id
-    for sample in test:
-        sample.bus_group.allocate(server)
-        assert sample.bus_group.is_allocated
-        assert sample.bus_group.server is server
-        if sample.calculation_rate == CalculationRate.CONTROL:
-            assert sample.bus_group.bus_id == bus_control_count
-            assert sample.bus_group.map_symbol == f"c{bus_control_count}"
-            bus_control_count += sample.bus_count
-        if sample.calculation_rate == CalculationRate.AUDIO:
-            assert sample.bus_group.bus_id == bus_audio_count
-            assert sample.bus_group.map_symbol == f"a{bus_audio_count}"
-            bus_audio_count += sample.bus_count
-        for i, bus in enumerate(sample.bus_group):
-            assert bus.is_allocated
-            assert bus.bus_group is sample.bus_group
-            assert bus.calculation_rate == sample.calculation_rate
-            assert bus.bus_id == sample.bus_group.bus_id + i
-            assert sample.bus_group.index(bus) == i
-    assert all(_.bus_group.is_allocated for _ in test)
-    assert all(_.bus_group.free() for _ in test)
-    assert not any(_.bus_group.is_allocated for _ in test)
-
-    for sample in control:
-        assert not sample.bus_group.is_allocated
-        assert sample.bus_group.bus_id is None
-        assert sample.bus_group.server is None
-        for bus in sample.bus_group:
-            assert not bus.is_allocated
-            assert bus.bus_group is sample.bus_group
-            assert bus.bus_id is None
-            assert bus.calculation_rate == sample.calculation_rate
-
-
-@hypothesis.settings(hp_settings)
 @hypothesis.given(strategy=st_bus_group(calculation_rates=("control",)))
-def test_getset(server, strategy):
+def test_getset(server: Server, strategy: CTGr[SampleBusGroup]) -> None:
 
     control, test = strategy
 
@@ -131,54 +81,3 @@ def test_getset(server, strategy):
     assert control_vals == tuple(_.bus_group.get() for _ in control)
     assert all(_.bus_group.free() for _ in control + test)
     assert not any(_.bus_group.is_allocated for _ in control + test)
-
-
-@hypothesis.settings(hp_settings)
-@hypothesis.given(strategy=st_bus_group(calculation_rates=("control",)))
-def test_fill(server, strategy):
-
-    control, test = strategy
-
-    assert all(_.bus_group.allocate(server) for _ in control + test)
-    assert all(_.bus_group.is_allocated for _ in control + test)
-    control_vals = tuple(_.bus_group.get() for _ in control)
-
-    for sample in test:
-        val = sample.set_values[0]
-        sample.bus_group.fill(val)
-        results = sample.bus_group.get()
-        assert results == tuple(val for _ in range(sample.bus_count))
-
-    assert control_vals == tuple(_.bus_group.get() for _ in control)
-    assert all(_.bus_group.free() for _ in control + test)
-    assert not any(_.bus_group.is_allocated for _ in control + test)
-
-
-def test_exceptions(server):
-
-    with pytest.raises(ValueError):
-        _ = supriya.realtime.BusGroup(calculation_rate="REALLYFAST")  # type: ignore
-    with pytest.raises(ValueError):
-        _ = supriya.realtime.BusGroup(bus_count=-0.01)  # type: ignore
-    with pytest.raises(ValueError):
-        _ = supriya.realtime.BusGroup(bus_id={})
-
-    bus_group = supriya.realtime.BusGroup(calculation_rate=CalculationRate.CONTROL)
-    with pytest.raises(BusNotAllocated):
-        bus_group.fill(0.0)
-    with pytest.raises(BusNotAllocated):
-        _ = bus_group.get()
-    with pytest.raises(BusNotAllocated):
-        bus_group.set(*[0.0 for _ in range(len(bus_group))])
-
-    bus_group = supriya.realtime.BusGroup(calculation_rate=CalculationRate.AUDIO)
-    bus_group.allocate(server)
-    assert bus_group.is_allocated
-    with pytest.raises(IncompatibleRate):
-        bus_group.fill(0.0)
-    with pytest.raises(IncompatibleRate):
-        _ = bus_group.get()
-    with pytest.raises(IncompatibleRate):
-        bus_group.set(*[0.0 for _ in range(len(bus_group))])
-    bus_group.free()
-    assert not bus_group.is_allocated

@@ -5,7 +5,8 @@ import pytest_asyncio
 
 import supriya
 from supriya.osc import OscBundle, OscMessage
-from tests.proptest.setup import hp_global_settings
+
+from tests.proptest.utils import hp_global_settings
 
 
 @pytest.fixture(autouse=True)
