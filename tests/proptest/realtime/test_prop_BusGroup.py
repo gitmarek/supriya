@@ -41,7 +41,6 @@ class SampleBusGroup(TestSample):
 
 
 @get_CTGr(max_size=64)
-@st.composite
 def st_bus_group(
     draw: st.DrawFn,
     max_bus_count=16,

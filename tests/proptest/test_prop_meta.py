@@ -29,7 +29,6 @@ def st_test_strategy(draw: st.DrawFn) -> SampleMeta:
 
 
 @get_CTGr()
-@st.composite
 def st_test_strategy_control_group(draw: st.DrawFn) -> SampleMeta:
 
     sample = SampleMeta(draw(st.booleans()), draw(st.integers()))

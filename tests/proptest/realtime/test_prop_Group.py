@@ -52,7 +52,6 @@ def st_group_sample(draw: st.DrawFn) -> SampleGroup:
 
 
 @get_CTGr(min_size=1, max_size=16)
-@st.composite
 def st_group(draw: st.DrawFn) -> SampleGroup:
 
     name = draw(st.one_of(st.text(), st.none()))

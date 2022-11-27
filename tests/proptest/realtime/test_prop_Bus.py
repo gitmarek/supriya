@@ -43,7 +43,6 @@ class SampleBus(TestSample):
 
 
 @get_CTGr(max_size=64)
-@st.composite
 def st_bus(
     draw: st.DrawFn,
     calculation_rates=((CalculationRate.AUDIO, CalculationRate.CONTROL)),
