@@ -3618,6 +3618,8 @@ class UGen(UGenMethodMixin):
     """
 
     ### CLASS VARIABLES ###
+    ar: Callable
+    kr: Callable
 
     __slots__ = ("_inputs", "_input_names", "_special_index", "_uuid")
 
